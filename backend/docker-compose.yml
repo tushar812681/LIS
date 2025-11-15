@@ -1,0 +1,331 @@
+version: '3.8'
+
+services:
+  # ============================================================================
+  # Infrastructure Services
+  # ============================================================================
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: lis_postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-databases.sql:/docker-entrypoint-initdb.d/init-databases.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - lis_network
+
+  redis:
+    image: redis:7-alpine
+    container_name: lis_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - lis_network
+
+  # ============================================================================
+  # Core Workflow Services
+  # ============================================================================
+
+  patient-service:
+    build:
+      context: ./services/patient-service
+      dockerfile: Dockerfile
+    container_name: lis_patient_service
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/lis_patient
+      HOST: 0.0.0.0
+      PORT: 8081
+      DATABASE_MAX_CONNECTIONS: 32
+      ENABLE_CACHING: "false"
+      ENABLE_EVENTS: "false"
+      RUST_LOG: info
+    ports:
+      - "8081:8081"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - lis_network
+    restart: unless-stopped
+
+  sample-service:
+    build:
+      context: ./services/sample-service
+      dockerfile: Dockerfile
+    container_name: lis_sample_service
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/lis_sample
+      HOST: 0.0.0.0
+      PORT: 8082
+      DATABASE_MAX_CONNECTIONS: 32
+      ENABLE_CACHING: "false"
+      ENABLE_EVENTS: "false"
+      RUST_LOG: info
+    ports:
+      - "8082:8082"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - lis_network
+    restart: unless-stopped
+
+  order-service:
+    build:
+      context: ./services/order-service
+      dockerfile: Dockerfile
+    container_name: lis_order_service
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/lis_order
+      HOST: 0.0.0.0
+      PORT: 8083
+      DATABASE_MAX_CONNECTIONS: 32
+      ENABLE_CACHING: "false"
+      ENABLE_EVENTS: "false"
+      RUST_LOG: info
+    ports:
+      - "8083:8083"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - lis_network
+    restart: unless-stopped
+
+  result-service:
+    build:
+      context: ./services/result-service
+      dockerfile: Dockerfile
+    container_name: lis_result_service
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/lis_result
+      HOST: 0.0.0.0
+      PORT: 8084
+      DATABASE_MAX_CONNECTIONS: 32
+      ENABLE_CACHING: "false"
+      ENABLE_EVENTS: "false"
+      RUST_LOG: info
+    ports:
+      - "8084:8084"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - lis_network
+    restart: unless-stopped
+
+  # ============================================================================
+  # Infrastructure Services
+  # ============================================================================
+
+  user-service:
+    build:
+      context: ./services/user-service
+      dockerfile: Dockerfile
+    container_name: lis_user_service
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/lis_user
+      HOST: 0.0.0.0
+      PORT: 8085
+      DATABASE_MAX_CONNECTIONS: 32
+      ENABLE_CACHING: "false"
+      ENABLE_EVENTS: "false"
+      JWT_SECRET: "your-secret-key-change-in-production"
+      JWT_EXPIRATION_HOURS: "24"
+      RUST_LOG: info
+    ports:
+      - "8085:8085"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - lis_network
+    restart: unless-stopped
+
+  organization-service:
+    build:
+      context: ./services/organization-service
+      dockerfile: Dockerfile
+    container_name: lis_organization_service
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/lis_organization
+      HOST: 0.0.0.0
+      PORT: 8086
+      DATABASE_MAX_CONNECTIONS: 32
+      ENABLE_CACHING: "false"
+      ENABLE_EVENTS: "false"
+      RUST_LOG: info
+    ports:
+      - "8086:8086"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - lis_network
+    restart: unless-stopped
+
+  equipment-service:
+    build:
+      context: ./services/equipment-service
+      dockerfile: Dockerfile
+    container_name: lis_equipment_service
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/lis_equipment
+      HOST: 0.0.0.0
+      PORT: 8087
+      DATABASE_MAX_CONNECTIONS: 32
+      ENABLE_CACHING: "false"
+      ENABLE_EVENTS: "false"
+      RUST_LOG: info
+    ports:
+      - "8087:8087"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - lis_network
+    restart: unless-stopped
+
+  # ============================================================================
+  # Compliance & Operations Services
+  # ============================================================================
+
+  qc-service:
+    build:
+      context: ./services/qc-service
+      dockerfile: Dockerfile
+    container_name: lis_qc_service
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/lis_qc
+      HOST: 0.0.0.0
+      PORT: 8088
+      DATABASE_MAX_CONNECTIONS: 32
+      ENABLE_CACHING: "false"
+      ENABLE_EVENTS: "false"
+      RUST_LOG: info
+    ports:
+      - "8088:8088"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - lis_network
+    restart: unless-stopped
+
+  billing-service:
+    build:
+      context: ./services/billing-service
+      dockerfile: Dockerfile
+    container_name: lis_billing_service
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/lis_billing
+      HOST: 0.0.0.0
+      PORT: 8089
+      DATABASE_MAX_CONNECTIONS: 32
+      ENABLE_CACHING: "false"
+      ENABLE_EVENTS: "false"
+      RUST_LOG: info
+    ports:
+      - "8089:8089"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - lis_network
+    restart: unless-stopped
+
+  report-service:
+    build:
+      context: ./services/report-service
+      dockerfile: Dockerfile
+    container_name: lis_report_service
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/lis_report
+      HOST: 0.0.0.0
+      PORT: 8090
+      DATABASE_MAX_CONNECTIONS: 32
+      ENABLE_CACHING: "false"
+      ENABLE_EVENTS: "false"
+      RUST_LOG: info
+    ports:
+      - "8090:8090"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - lis_network
+    restart: unless-stopped
+
+  # ============================================================================
+  # Support Services
+  # ============================================================================
+
+  inventory-service:
+    build:
+      context: ./services/inventory-service
+      dockerfile: Dockerfile
+    container_name: lis_inventory_service
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/lis_inventory
+      HOST: 0.0.0.0
+      PORT: 8091
+      DATABASE_MAX_CONNECTIONS: 32
+      ENABLE_CACHING: "false"
+      ENABLE_EVENTS: "false"
+      RUST_LOG: info
+    ports:
+      - "8091:8091"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - lis_network
+    restart: unless-stopped
+
+  notification-service:
+    build:
+      context: ./services/notification-service
+      dockerfile: Dockerfile
+    container_name: lis_notification_service
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/lis_notification
+      HOST: 0.0.0.0
+      PORT: 8092
+      DATABASE_MAX_CONNECTIONS: 32
+      ENABLE_CACHING: "false"
+      ENABLE_EVENTS: "false"
+      RUST_LOG: info
+    ports:
+      - "8092:8092"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - lis_network
+    restart: unless-stopped
+
+networks:
+  lis_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:

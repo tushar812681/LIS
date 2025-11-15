@@ -1,0 +1,53 @@
+[package]
+name = "common"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[dependencies]
+# Async
+tokio.workspace = true
+
+# Serialization
+serde.workspace = true
+serde_json.workspace = true
+
+# UUID
+uuid.workspace = true
+
+# Date/Time
+chrono.workspace = true
+
+# Decimal
+rust_decimal.workspace = true
+
+# Error Handling
+anyhow.workspace = true
+thiserror.workspace = true
+
+# Logging
+tracing.workspace = true
+
+# JWT
+jsonwebtoken.workspace = true
+
+# Validation
+validator.workspace = true
+
+# Database
+sqlx.workspace = true
+mongodb.workspace = true
+redis.workspace = true
+
+# GraphQL
+async-graphql.workspace = true
+
+# Password hashing
+argon2.workspace = true
+
+# Encoding
+base64 = "0.22"
+
+[dev-dependencies]
+mockall.workspace = true

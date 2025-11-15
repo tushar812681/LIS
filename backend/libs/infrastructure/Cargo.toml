@@ -1,0 +1,56 @@
+[package]
+name = "infrastructure"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[dependencies]
+# Workspace dependencies
+common = { path = "../common" }
+
+# Async Runtime
+tokio.workspace = true
+
+# Database
+sqlx.workspace = true
+mongodb.workspace = true
+redis.workspace = true
+
+# Kafka
+rdkafka.workspace = true
+
+# Serialization
+serde.workspace = true
+serde_json.workspace = true
+
+# UUID
+uuid.workspace = true
+
+# Date/Time
+chrono.workspace = true
+
+# Decimal
+rust_decimal.workspace = true
+
+# Error Handling
+anyhow.workspace = true
+thiserror.workspace = true
+
+# Logging
+tracing.workspace = true
+
+# Configuration
+config.workspace = true
+
+# HTTP Client
+reqwest.workspace = true
+
+# Encoding
+hex = "0.4"
+base64 = "0.22"
+hmac = "0.12"
+sha2 = "0.10"
+
+[dev-dependencies]
+mockall.workspace = true

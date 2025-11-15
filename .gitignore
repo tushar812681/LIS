@@ -1,0 +1,171 @@
+# Operating System
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+*~
+
+# IDEs and Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*.swn
+.vim/
+*.sublime-project
+*.sublime-workspace
+
+# Rust
+backend/**/target/
+backend/**/*.rs.bk
+backend/**/Cargo.lock
+backend/**/.cargo/
+**/target/
+target/
+
+# Node / JavaScript / TypeScript
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/build/
+frontend/dist/
+frontend/.cache/
+node_modules/
+.next/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-store/
+.yarn/
+.npm/
+.eslintcache
+*.tsbuildinfo
+
+# Environment Variables
+.env
+.env*.local
+.env.development
+.env.production
+.env.test
+*.env
+
+# Secrets and Credentials
+secrets/
+*.pem
+*.key
+*.crt
+*.p12
+credentials.json
+service-account*.json
+
+# Database
+*.sqlite
+*.sqlite3
+*.db
+/postgres-data/
+/mongo-data/
+/redis-data/
+
+# Docker
+docker-compose.override.yml
+.dockerignore
+
+# Kubernetes
+/infrastructure/kubernetes/secrets/
+*.kubeconfig
+
+# Terraform
+/infrastructure/terraform/.terraform/
+/infrastructure/terraform/*.tfstate
+/infrastructure/terraform/*.tfstate.backup
+/infrastructure/terraform/*.tfvars
+/infrastructure/terraform/.terraform.lock.hcl
+
+# Python (ML services)
+/ml/**/__pycache__/
+/ml/**/*.py[cod]
+/ml/**/*$py.class
+/ml/**/.Python
+/ml/**/venv/
+/ml/**/ENV/
+/ml/**/env/
+/ml/**/*.so
+/ml/**/.ipynb_checkpoints/
+/ml/**/mlruns/
+/ml/**/artifacts/
+/ml/**/models/*.h5
+/ml/**/models/*.pkl
+/ml/**/models/*.joblib
+
+# Logs
+logs/
+*.log
+backend/**/*.log
+frontend/**/*.log
+**/*.log
+
+# Coverage and Test Reports
+coverage/
+.nyc_output/
+*.cover
+.hypothesis/
+.pytest_cache/
+/backend/**/target/debug/
+/backend/**/target/release/
+
+# Build Artifacts
+/backend/**/target/
+/frontend/.next/
+/frontend/out/
+dist/
+build/
+
+# Temporary Files
+tmp/
+temp/
+*.tmp
+*.temp
+
+# Generated Documentation
+/docs/api/generated/
+/docs/coverage/
+
+# MacOS
+*.dmg
+
+# Linux
+*.AppImage
+
+# Windows
+*.exe
+*.msi
+
+# Compressed Files
+*.zip
+*.tar.gz
+*.rar
+*.7z
+
+# Lock files (keep package lock files)
+# Cargo.lock is gitignored above for libraries, but kept for binaries
+# package-lock.json and yarn.lock should be committed
+
+# Monitoring and Observability
+/monitoring/data/
+prometheus-data/
+grafana-data/
+
+# Backup files
+*.bak
+*.backup
+*~
+
+# Cache directories
+.cache/
+.parcel-cache/
+.turbo/

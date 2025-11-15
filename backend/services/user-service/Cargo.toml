@@ -1,0 +1,31 @@
+[package]
+name = "user-service"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "user-service"
+path = "src/main.rs"
+
+[dependencies]
+common = { path = "../../libs/common" }
+tokio.workspace = true
+actix-web.workspace = true
+actix-cors.workspace = true
+async-graphql.workspace = true
+async-graphql-actix-web.workspace = true
+sqlx.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+uuid.workspace = true
+chrono.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+config.workspace = true
+dotenvy.workspace = true
+argon2.workspace = true
+jsonwebtoken.workspace = true
+rand.workspace = true
+reqwest = { version = "0.11", features = ["json"] }

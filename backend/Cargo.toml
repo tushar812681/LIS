@@ -1,0 +1,116 @@
+[workspace]
+resolver = "2"
+
+members = [
+    # API Gateway
+    "services/api-gateway",
+
+    # Microservices
+    "services/patient-service",
+    "services/sample-service",
+    "services/order-service",
+    "services/user-service",
+    "services/organization-service",
+    "services/equipment-service",
+    "services/result-service",
+    "services/qc-service",
+    "services/report-service",
+    "services/billing-service",
+    "services/compliance-service",
+    "services/analytics-service",
+    "services/notification-service",
+    "services/inventory-service",
+
+    # Shared Libraries
+    "libs/common",
+    "libs/infrastructure",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+authors = ["LIS Modern Team <team@lismodern.com>"]
+license = "MIT"
+repository = "https://github.com/your-org/lis-modern"
+
+[workspace.dependencies]
+# Async Runtime
+tokio = { version = "1.35", features = ["full"] }
+tokio-util = "0.7"
+
+# Web Framework
+actix-web = "4.4"
+actix-rt = "2.9"
+actix-cors = "0.7"
+
+# GraphQL
+async-graphql = { version = "7.0", features = ["uuid", "chrono", "decimal"] }
+async-graphql-actix-web = "7.0"
+
+# Database
+sqlx = { version = "0.7", features = ["runtime-tokio-rustls", "postgres", "uuid", "chrono", "json", "rust_decimal"] }
+mongodb = "2.8"
+redis = { version = "0.24", features = ["tokio-comp", "connection-manager"] }
+
+# Kafka
+rdkafka = { version = "0.36", features = ["tokio"] }
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# UUID
+uuid = { version = "1.6", features = ["v4", "serde"] }
+
+# Date/Time
+chrono = { version = "0.4", features = ["serde"] }
+
+# Decimal
+rust_decimal = { version = "1.33", features = ["serde"] }
+
+# Error Handling
+anyhow = "1.0"
+thiserror = "1.0"
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# Configuration
+config = "0.14"
+dotenvy = "0.15"
+
+# JWT
+jsonwebtoken = "9.2"
+
+# Password Hashing
+argon2 = "0.5"
+
+# Random
+rand = "0.8"
+
+# HTTP Client
+reqwest = { version = "0.11", features = ["json"] }
+
+# Validation
+validator = { version = "0.18", features = ["derive"] }
+
+# Metrics
+prometheus = "0.13"
+
+# Tracing
+opentelemetry = "0.21"
+opentelemetry-jaeger = "0.20"
+
+# Testing
+mockall = "0.12"
+
+[profile.dev]
+opt-level = 0
+debug = true
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+strip = true
