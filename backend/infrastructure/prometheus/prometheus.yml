@@ -1,0 +1,234 @@
+# Prometheus Configuration for LIS Microservices
+# Version: 1.0.0
+# Date: 2025-11-15
+
+global:
+  scrape_interval: 15s      # How frequently to scrape targets
+  evaluation_interval: 15s  # How frequently to evaluate rules
+  scrape_timeout: 10s       # Timeout for scraping targets
+
+  # Attach these labels to any time series or alerts
+  external_labels:
+    environment: 'production'
+    cluster: 'lis-cluster'
+    monitor: 'lis-monitor'
+
+# Alertmanager configuration (optional - add when implementing alerts)
+# alerting:
+#   alertmanagers:
+#     - static_configs:
+#         - targets:
+#             - 'alertmanager:9093'
+
+# Rule files (optional - add when implementing alert rules)
+# rule_files:
+#   - 'alerts.yml'
+
+# Scrape configurations
+scrape_configs:
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+        labels:
+          service: 'prometheus'
+
+  # PostgreSQL database
+  - job_name: 'postgres'
+    static_configs:
+      - targets: ['postgres:5432']
+        labels:
+          service: 'postgres'
+
+  # Redis cache
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis:6379']
+        labels:
+          service: 'redis'
+
+  # Kafka broker
+  - job_name: 'kafka'
+    static_configs:
+      - targets: ['kafka:9092']
+        labels:
+          service: 'kafka'
+
+  # MinIO object storage
+  - job_name: 'minio'
+    metrics_path: '/minio/v2/metrics/cluster'
+    static_configs:
+      - targets: ['minio:9000']
+        labels:
+          service: 'minio'
+
+  # Patient Service
+  - job_name: 'patient-service'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['patient-service:8081']
+        labels:
+          service: 'patient-service'
+          tier: 'core'
+
+  # Sample Service
+  - job_name: 'sample-service'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['sample-service:8082']
+        labels:
+          service: 'sample-service'
+          tier: 'core'
+
+  # Order Service
+  - job_name: 'order-service'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['order-service:8083']
+        labels:
+          service: 'order-service'
+          tier: 'core'
+
+  # Result Service
+  - job_name: 'result-service'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['result-service:8084']
+        labels:
+          service: 'result-service'
+          tier: 'core'
+
+  # User Service
+  - job_name: 'user-service'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['user-service:8085']
+        labels:
+          service: 'user-service'
+          tier: 'infrastructure'
+
+  # Organization Service
+  - job_name: 'organization-service'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['organization-service:8086']
+        labels:
+          service: 'organization-service'
+          tier: 'infrastructure'
+
+  # Equipment Service
+  - job_name: 'equipment-service'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['equipment-service:8087']
+        labels:
+          service: 'equipment-service'
+          tier: 'operations'
+
+  # QC Service
+  - job_name: 'qc-service'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['qc-service:8088']
+        labels:
+          service: 'qc-service'
+          tier: 'compliance'
+
+  # Billing Service
+  - job_name: 'billing-service'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['billing-service:8089']
+        labels:
+          service: 'billing-service'
+          tier: 'finance'
+
+  # Report Service
+  - job_name: 'report-service'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['report-service:8090']
+        labels:
+          service: 'report-service'
+          tier: 'core'
+
+  # Inventory Service
+  - job_name: 'inventory-service'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['inventory-service:8091']
+        labels:
+          service: 'inventory-service'
+          tier: 'operations'
+
+  # Notification Service
+  - job_name: 'notification-service'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['notification-service:8092']
+        labels:
+          service: 'notification-service'
+          tier: 'communication'
+
+  # Analytics Service
+  - job_name: 'analytics-service'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['analytics-service:8093']
+        labels:
+          service: 'analytics-service'
+          tier: 'intelligence'
+
+  # Compliance Service
+  - job_name: 'compliance-service'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['compliance-service:8094']
+        labels:
+          service: 'compliance-service'
+          tier: 'compliance'
+
+  # Sync Service
+  - job_name: 'sync-service'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['sync-service:8095']
+        labels:
+          service: 'sync-service'
+          tier: 'infrastructure'
+
+  # File Service
+  - job_name: 'file-service'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['file-service:8096']
+        labels:
+          service: 'file-service'
+          tier: 'infrastructure'
+
+  # Integration Service
+  - job_name: 'integration-service'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['integration-service:8097']
+        labels:
+          service: 'integration-service'
+          tier: 'integration'
+
+  # ABDM Service
+  - job_name: 'abdm-service'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['abdm-service:8098']
+        labels:
+          service: 'abdm-service'
+          tier: 'integration'
+
+  # API Gateway
+  - job_name: 'api-gateway'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['api-gateway:8000']
+        labels:
+          service: 'api-gateway'
+          tier: 'gateway'
