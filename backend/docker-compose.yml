@@ -311,13 +311,348 @@ services:
       PORT: 8092
       DATABASE_MAX_CONNECTIONS: 32
       ENABLE_CACHING: "false"
-      ENABLE_EVENTS: "false"
+      ENABLE_EVENTS: "true"
+      KAFKA_BROKERS: "kafka:9092"
+      WHATSAPP_API_URL: "${WHATSAPP_API_URL:-https://graph.facebook.com/v18.0}"
+      WHATSAPP_ACCESS_TOKEN: "${WHATSAPP_ACCESS_TOKEN:-}"
+      WHATSAPP_PHONE_NUMBER_ID: "${WHATSAPP_PHONE_NUMBER_ID:-}"
+      TWILIO_ACCOUNT_SID: "${TWILIO_ACCOUNT_SID:-}"
+      TWILIO_AUTH_TOKEN: "${TWILIO_AUTH_TOKEN:-}"
+      TWILIO_PHONE_NUMBER: "${TWILIO_PHONE_NUMBER:-}"
+      SENDGRID_API_KEY: "${SENDGRID_API_KEY:-}"
+      SENDGRID_FROM_EMAIL: "${SENDGRID_FROM_EMAIL:-noreply@lis.example.com}"
       RUST_LOG: info
     ports:
       - "8092:8092"
     depends_on:
       postgres:
         condition: service_healthy
+      kafka:
+        condition: service_started
+    networks:
+      - lis_network
+    restart: unless-stopped
+
+  analytics-service:
+    build:
+      context: ./services/analytics-service
+      dockerfile: Dockerfile
+    container_name: lis_analytics_service
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/lis_analytics
+      HOST: 0.0.0.0
+      PORT: 8093
+      DATABASE_MAX_CONNECTIONS: 32
+      ENABLE_CACHING: "true"
+      REDIS_URL: "redis://redis:6379"
+      ENABLE_EVENTS: "true"
+      KAFKA_BROKERS: "kafka:9092"
+      RUST_LOG: info
+    ports:
+      - "8093:8093"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - lis_network
+    restart: unless-stopped
+
+  compliance-service:
+    build:
+      context: ./services/compliance-service
+      dockerfile: Dockerfile
+    container_name: lis_compliance_service
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/lis_compliance
+      HOST: 0.0.0.0
+      PORT: 8094
+      DATABASE_MAX_CONNECTIONS: 32
+      ENABLE_CACHING: "false"
+      ENABLE_EVENTS: "true"
+      KAFKA_BROKERS: "kafka:9092"
+      RUST_LOG: info
+    ports:
+      - "8094:8094"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - lis_network
+    restart: unless-stopped
+
+  api-gateway:
+    build:
+      context: ./services/api-gateway
+      dockerfile: Dockerfile
+    container_name: lis_api_gateway
+    environment:
+      HOST: 0.0.0.0
+      PORT: 8000
+      PATIENT_SERVICE_URL: "http://patient-service:8081/graphql"
+      SAMPLE_SERVICE_URL: "http://sample-service:8082/graphql"
+      ORDER_SERVICE_URL: "http://order-service:8083/graphql"
+      RESULT_SERVICE_URL: "http://result-service:8084/graphql"
+      USER_SERVICE_URL: "http://user-service:8085/graphql"
+      ORGANIZATION_SERVICE_URL: "http://organization-service:8086/graphql"
+      EQUIPMENT_SERVICE_URL: "http://equipment-service:8087/graphql"
+      QC_SERVICE_URL: "http://qc-service:8088/graphql"
+      BILLING_SERVICE_URL: "http://billing-service:8089/graphql"
+      REPORT_SERVICE_URL: "http://report-service:8090/graphql"
+      INVENTORY_SERVICE_URL: "http://inventory-service:8091/graphql"
+      NOTIFICATION_SERVICE_URL: "http://notification-service:8092/graphql"
+      ANALYTICS_SERVICE_URL: "http://analytics-service:8093/graphql"
+      COMPLIANCE_SERVICE_URL: "http://compliance-service:8094/graphql"
+      SYNC_SERVICE_URL: "http://sync-service:8095/graphql"
+      FILE_SERVICE_URL: "http://file-service:8096/graphql"
+      INTEGRATION_SERVICE_URL: "http://integration-service:8097/graphql"
+      ABDM_SERVICE_URL: "http://abdm-service:8098/graphql"
+      JWT_SECRET: "your-secret-key-change-in-production"
+      REDIS_URL: "redis://redis:6379"
+      ENABLE_RATE_LIMITING: "true"
+      RATE_LIMIT_REQUESTS_PER_MINUTE: "100"
+      RUST_LOG: info
+    ports:
+      - "8000:8000"
+    depends_on:
+      - patient-service
+      - sample-service
+      - order-service
+      - result-service
+      - user-service
+      - organization-service
+      - equipment-service
+      - qc-service
+      - billing-service
+      - report-service
+      - inventory-service
+      - notification-service
+      - analytics-service
+      - compliance-service
+      - redis
+    networks:
+      - lis_network
+    restart: unless-stopped
+
+  # ============================================================================
+  # New Production-Critical Services
+  # ============================================================================
+
+  sync-service:
+    build:
+      context: ./services/sync-service
+      dockerfile: Dockerfile
+    container_name: lis_sync_service
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/lis_sync
+      HOST: 0.0.0.0
+      PORT: 8095
+      DATABASE_MAX_CONNECTIONS: 32
+      REDIS_URL: "redis://redis:6379"
+      ENABLE_EVENTS: "true"
+      KAFKA_BROKERS: "kafka:9092"
+      SYNC_INTERVAL_SECONDS: "300"
+      CONFLICT_RESOLUTION_STRATEGY: "last_write_wins"
+      RUST_LOG: info
+    ports:
+      - "8095:8095"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    networks:
+      - lis_network
+    restart: unless-stopped
+
+  file-service:
+    build:
+      context: ./services/file-service
+      dockerfile: Dockerfile
+    container_name: lis_file_service
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/lis_file
+      HOST: 0.0.0.0
+      PORT: 8096
+      DATABASE_MAX_CONNECTIONS: 32
+      MINIO_ENDPOINT: "minio:9000"
+      MINIO_ACCESS_KEY: "${MINIO_ROOT_USER:-minioadmin}"
+      MINIO_SECRET_KEY: "${MINIO_ROOT_PASSWORD:-minioadmin}"
+      MINIO_USE_SSL: "false"
+      MINIO_BUCKET_NAME: "lis-files"
+      MAX_FILE_SIZE_MB: "50"
+      RUST_LOG: info
+    ports:
+      - "8096:8096"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    networks:
+      - lis_network
+    restart: unless-stopped
+
+  integration-service:
+    build:
+      context: ./services/integration-service
+      dockerfile: Dockerfile
+    container_name: lis_integration_service
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/lis_integration
+      HOST: 0.0.0.0
+      PORT: 8097
+      DATABASE_MAX_CONNECTIONS: 32
+      ENABLE_EVENTS: "true"
+      KAFKA_BROKERS: "kafka:9092"
+      HL7_LISTENER_PORT: "6661"
+      ASTM_LISTENER_PORT: "6662"
+      MIRTH_URL: "${MIRTH_URL:-http://mirth:8080}"
+      RUST_LOG: info
+    ports:
+      - "8097:8097"
+      - "6661:6661"  # HL7 listener
+      - "6662:6662"  # ASTM listener
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    networks:
+      - lis_network
+    restart: unless-stopped
+
+  abdm-service:
+    build:
+      context: ./services/abdm-service
+      dockerfile: Dockerfile
+    container_name: lis_abdm_service
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/lis_abdm
+      HOST: 0.0.0.0
+      PORT: 8098
+      DATABASE_MAX_CONNECTIONS: 32
+      ABDM_GATEWAY_URL: "${ABDM_GATEWAY_URL:-https://dev.abdm.gov.in/gateway}"
+      ABDM_CLIENT_ID: "${ABDM_CLIENT_ID:-}"
+      ABDM_CLIENT_SECRET: "${ABDM_CLIENT_SECRET:-}"
+      ABDM_HIP_ID: "${ABDM_HIP_ID:-}"
+      ENABLE_EVENTS: "true"
+      KAFKA_BROKERS: "kafka:9092"
+      RUST_LOG: info
+    ports:
+      - "8098:8098"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - lis_network
+    restart: unless-stopped
+
+  # ============================================================================
+  # Infrastructure Services
+  # ============================================================================
+
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: lis_kafka
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    ports:
+      - "9092:9092"
+    depends_on:
+      - zookeeper
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    networks:
+      - lis_network
+    restart: unless-stopped
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: lis_zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+    volumes:
+      - zookeeper_data:/var/lib/zookeeper/data
+      - zookeeper_logs:/var/lib/zookeeper/log
+    networks:
+      - lis_network
+    restart: unless-stopped
+
+  minio:
+    image: minio/minio:latest
+    container_name: lis_minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    networks:
+      - lis_network
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: lis_prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./infrastructure/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    networks:
+      - lis_network
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: lis_grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: false
+    ports:
+      - "3001:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+    networks:
+      - lis_network
+    restart: unless-stopped
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: lis_jaeger
+    environment:
+      COLLECTOR_OTLP_ENABLED: true
+    ports:
+      - "16686:16686"  # UI
+      - "4317:4317"    # OTLP gRPC
+      - "4318:4318"    # OTLP HTTP
     networks:
       - lis_network
     restart: unless-stopped
@@ -329,3 +664,9 @@ networks:
 volumes:
   postgres_data:
   redis_data:
+  kafka_data:
+  zookeeper_data:
+  zookeeper_logs:
+  minio_data:
+  prometheus_data:
+  grafana_data:
