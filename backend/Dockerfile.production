@@ -1,0 +1,183 @@
+# =============================================================================
+# Production-Optimized Multi-Stage Dockerfile for Rust Microservices
+# =============================================================================
+# Features:
+# - Multi-stage build for minimal image size
+# - Security hardening with non-root user
+# - Health checks and graceful shutdown
+# - Optimized layer caching
+# - Production-ready runtime configuration
+# =============================================================================
+
+# =============================================================================
+# Stage 1: Build Dependencies (Cached Layer)
+# =============================================================================
+FROM rust:1.75-slim as chef
+
+# Install cargo-chef for dependency caching
+RUN cargo install cargo-chef --locked
+
+WORKDIR /app
+
+# =============================================================================
+# Stage 2: Prepare Recipe
+# =============================================================================
+FROM chef AS planner
+
+# Copy entire workspace
+COPY . .
+
+# Generate recipe for dependency caching
+RUN cargo chef prepare --recipe-path recipe.json
+
+# =============================================================================
+# Stage 3: Build Dependencies
+# =============================================================================
+FROM chef AS builder-deps
+
+# Install build dependencies
+RUN apt-get update && apt-get install -y \
+    pkg-config \
+    libssl-dev \
+    libpq-dev \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy recipe
+COPY --from=planner /app/recipe.json recipe.json
+
+# Build dependencies (this layer will be cached)
+RUN cargo chef cook --release --recipe-path recipe.json
+
+# =============================================================================
+# Stage 4: Build Application
+# =============================================================================
+FROM builder-deps AS builder
+
+# Copy source code
+COPY . .
+
+# Build argument for service name
+ARG SERVICE_NAME
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION=0.1.0
+
+# Set labels
+LABEL org.opencontainers.image.created="${BUILD_DATE}" \
+      org.opencontainers.image.authors="LIS Modern Team" \
+      org.opencontainers.image.url="https://lismodern.com" \
+      org.opencontainers.image.source="https://github.com/your-org/lis-modern" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.title="LIS Modern ${SERVICE_NAME}" \
+      org.opencontainers.image.description="Cloud-native Laboratory Information System - ${SERVICE_NAME}"
+
+# Build the specific service in release mode with optimizations
+RUN cargo build --release --package ${SERVICE_NAME}
+
+# Strip debug symbols to reduce binary size
+RUN strip /app/target/release/${SERVICE_NAME}
+
+# =============================================================================
+# Stage 5: Runtime Image (Minimal)
+# =============================================================================
+FROM debian:bookworm-slim AS runtime
+
+# Install only runtime dependencies
+RUN apt-get update && apt-get install -y \
+    ca-certificates \
+    libssl3 \
+    libpq5 \
+    curl \
+    tini \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+# Create non-root user and group
+RUN groupadd -r appgroup -g 1000 && \
+    useradd -r -g appgroup -u 1000 -m -s /sbin/nologin appuser
+
+# Create necessary directories
+RUN mkdir -p /app /var/log/lis /var/lis/uploads /tmp/lis && \
+    chown -R appuser:appgroup /app /var/log/lis /var/lis /tmp/lis
+
+# Set working directory
+WORKDIR /app
+
+# Build arguments
+ARG SERVICE_NAME
+ARG VERSION=0.1.0
+
+# Copy binary from builder
+COPY --from=builder --chown=appuser:appgroup \
+    /app/target/release/${SERVICE_NAME} /app/service
+
+# Make binary executable
+RUN chmod +x /app/service
+
+# Add metadata
+ENV SERVICE_NAME=${SERVICE_NAME} \
+    VERSION=${VERSION} \
+    RUST_BACKTRACE=1 \
+    RUST_LOG=info
+
+# Switch to non-root user
+USER appuser
+
+# Expose port (will be overridden by environment variable)
+EXPOSE 8080
+
+# Health check
+HEALTHCHECK --interval=30s \
+            --timeout=10s \
+            --start-period=40s \
+            --retries=3 \
+    CMD curl -f http://localhost:${PORT:-8080}/health || exit 1
+
+# Use tini as init system for proper signal handling
+ENTRYPOINT ["/usr/bin/tini", "--"]
+
+# Run the service
+CMD ["/app/service"]
+
+# =============================================================================
+# Security Best Practices Applied:
+# =============================================================================
+# ✓ Multi-stage build for minimal attack surface
+# ✓ Non-root user (appuser)
+# ✓ Minimal base image (debian-slim)
+# ✓ No unnecessary packages
+# ✓ Stripped binaries
+# ✓ Read-only filesystem support
+# ✓ Proper signal handling with tini
+# ✓ Health checks enabled
+# ✓ Secure permissions
+# ✓ No secrets in image
+# ✓ Clear labels and metadata
+# =============================================================================
+
+# =============================================================================
+# Build Instructions:
+# =============================================================================
+# Build image:
+#   docker build \
+#     --build-arg SERVICE_NAME=patient-service \
+#     --build-arg VERSION=0.1.0 \
+#     --build-arg BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ') \
+#     --build-arg VCS_REF=$(git rev-parse --short HEAD) \
+#     -f Dockerfile.production \
+#     -t lis-modern/patient-service:0.1.0 \
+#     .
+#
+# Run container:
+#   docker run -d \
+#     --name patient-service \
+#     --read-only \
+#     --tmpfs /tmp \
+#     --cap-drop=ALL \
+#     --security-opt=no-new-privileges \
+#     -p 8081:8081 \
+#     --env-file .env \
+#     lis-modern/patient-service:0.1.0
+# =============================================================================
